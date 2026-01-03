@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="content-type">
+    <title>YourCollectionSite</title>
+</head>
+<body>
+    <div id="step-structure">
+        <p>Welche Datenstruktur willst du nutzen?</p>
+        <input type="text" id="input-structure" placeholder="List , Set, Queue">
+        <button id="btn-structure">Auswählen</button>
+    </div>
+
+    <div id="step-city">
+        <p>Welche neue Stadt kommt hinzu?</p>
+        <input type="text" id="input-city" placeholder="z.B Saarbrücken">
+        <button id="btn-city">Hinzufügen</button>
+    </div>
+
+    <div id="step-route" style="display: none;">
+        <p>Wie sieht die gesamte Route aus?</p>
+        <input type="text" id="input-route" placeholder="Stadt eingeben">
+        <button id="btn-route">Hinzufügen</button>
+        <div id="feedback"></div>
+    </div>
+
+    <script>
+        const stepStructure = document.getElementById('step-structure');
+        const stepCity = document.getElementById('step-city');
+        const stepRoute = document.getElementById('step-route');
+
+        const btnStructure = document.getElementById('btn-structure');
+        const btnCity = document.getElementById('btn-city');
+        const btnRoute = document.getElementById('btn-route');
+
+        const inputStructure = document.getElementById('input-structure');
+        const inputCity = document.getElementById('input-city');
+        const inputRoute = document.getElementById('input-route');
+        const feedback = document.getElementById('feedback');
+
+        let cities = [];
+        let currentQuizIndex = 0; // Hilft uns zu tracken, welche Stadt im Quiz gerade dran ist
+
+
+        stepCity.style.display = 'none';
+        stepRoute.style.display = 'none';
+
+        // 1. Schritt: Struktur wählen
+        btnStructure.addEventListener('click', function() {
+            if (inputStructure.value !== "") {
+                stepStructure.style.display = 'none';
+                stepCity.style.display = 'block';
+            }
+        });
+
+        // 2. Schritt: Neue Stadt zum Array hinzufügen
+        btnCity.addEventListener('click', function() {
+            if (inputCity.value !== "") {
+                cities.push(inputCity.value);
+                inputCity.value = "";
+
+
+                stepCity.style.display = 'none';
+                stepRoute.style.display = 'block';
+                currentQuizIndex = 0;
+                feedback.innerHTML = `Tipp: Du musst ${cities.length} Stadt/Städte nennen.`;
+            }
+        });
+
+
+        btnRoute.addEventListener('click', function() {
+            const guess = inputRoute.value;
+
+            if (guess.toLowerCase() === cities[currentQuizIndex].toLowerCase()) {
+                currentQuizIndex++;
+                inputRoute.value = "";
+
+                if (currentQuizIndex === cities.length) {
+                    alert("Prima, alle Städte in der richtigen Reihenfolge!");
+
+                    stepRoute.style.display = 'none';
+                    stepCity.style.display = 'block';
+                } else {
+                    feedback.innerHTML = "Richtig! Nächste Stadt...";
+                }
+            } else {
+                alert(`${guess} ist falsch! Korrekt wäre ${cities[currentQuizIndex]}. Schade!`);
+                location.reload();
+            }
+        });
+    </script>
+</body>
+</html>
