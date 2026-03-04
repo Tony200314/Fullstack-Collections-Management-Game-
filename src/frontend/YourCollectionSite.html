@@ -1,94 +1,186 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="content-type">
-    <title>YourCollectionSite</title>
+    <title>Your Collection</title>
+    <link rel="stylesheet" href="YourCollectionStyle.css">
 </head>
 <body>
-    <div id="step-structure">
-        <p>Welche Datenstruktur willst du nutzen?</p>
-        <input type="text" id="input-structure" placeholder="List , Set, Queue">
-        <button id="btn-structure">Auswählen</button>
-    </div>
+<main class="app">
+    <header>
+        <h1>Your Collection Playground</h1>
+        <p>Verbinde das Spring-Backend mit dem Browser und verwalte deine Lieblingsstädte über HTTP.</p>
+    </header>
 
-    <div id="step-city">
-        <p>Welche neue Stadt kommt hinzu?</p>
-        <input type="text" id="input-city" placeholder="z.B Saarbrücken">
-        <button id="btn-city">Hinzufügen</button>
-    </div>
+    <section class="card">
+        <h2>1. Datenstruktur wählen</h2>
+        <div class="structure-picker">
+            <button type="button" data-type="list" class="active">List</button>
+            <button type="button" data-type="set">Set</button>
+            <button type="button" data-type="queue">Queue</button>
+        </div>
+        <p class="hint">Alle Anfragen gehen an <code>http://localhost:8080/getConnection</code></p>
+    </section>
 
-    <div id="step-route" style="display: none;">
-        <p>Wie sieht die gesamte Route aus?</p>
-        <input type="text" id="input-route" placeholder="Stadt eingeben">
-        <button id="btn-route">Hinzufügen</button>
-        <div id="feedback"></div>
-    </div>
+    <section class="card">
+        <h2>2. Städte verwalten</h2>
+        <div class="form-grid">
+            <label>
+                Neue Stadt
+                <input type="text" id="city-input" placeholder="z. B. Saarbrücken">
+            </label>
+            <button type="button" id="add-city">Hinzufügen</button>
 
-    <script>
-        const stepStructure = document.getElementById('step-structure');
-        const stepCity = document.getElementById('step-city');
-        const stepRoute = document.getElementById('step-route');
+            <label>
+                Stadt entfernen
+                <input type="text" id="remove-input" placeholder="Name der Stadt">
+            </label>
+            <button type="button" id="remove-city" class="danger">Löschen</button>
 
-        const btnStructure = document.getElementById('btn-structure');
-        const btnCity = document.getElementById('btn-city');
-        const btnRoute = document.getElementById('btn-route');
+            <label>
+                Suche nach Stadt
+                <input type="text" id="search-input" placeholder="Name der Stadt">
+            </label>
+            <button type="button" id="search-city" class="secondary">Prüfen</button>
+        </div>
+        <div id="message" role="status"></div>
+    </section>
 
-        const inputStructure = document.getElementById('input-structure');
-        const inputCity = document.getElementById('input-city');
-        const inputRoute = document.getElementById('input-route');
-        const feedback = document.getElementById('feedback');
+    <section class="card">
+        <h2>3. Route anzeigen</h2>
+        <div class="toolbar">
+            <label>Sortierung
+                <select id="order-select">
+                    <option value="input">Einfügereihenfolge</option>
+                    <option value="asc">Alphabetisch (A-Z)</option>
+                    <option value="desc">Alphabetisch (Z-A)</option>
+                </select>
+            </label>
+            <button type="button" id="refresh" class="secondary">Aktualisieren</button>
+        </div>
+        <ul id="route-list"></ul>
+    </section>
+</main>
 
-        let cities = [];
-        let currentQuizIndex = 0; // Hilft uns zu tracken, welche Stadt im Quiz gerade dran ist
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const baseUrl = "http://localhost:8080/getConnection";
 
+        const typeButtons = document.querySelectorAll("[data-type]");
+        const cityInput = document.getElementById("city-input");
+        const removeInput = document.getElementById("remove-input");
+        const searchInput = document.getElementById("search-input");
+        const messageBox = document.getElementById("message");
+        const routeList = document.getElementById("route-list");
+        const orderSelect = document.getElementById("order-select");
 
-        stepCity.style.display = 'none';
-        stepRoute.style.display = 'none';
+        let selectedType = "list";
 
-        // 1. Schritt: Struktur wählen
-        btnStructure.addEventListener('click', function() {
-            if (inputStructure.value !== "") {
-                stepStructure.style.display = 'none';
-                stepCity.style.display = 'block';
+        function setMessage(text, tone = "info") {
+            messageBox.textContent = text;
+            messageBox.dataset.tone = tone;
+        }
+
+        async function request(path, options = {}) {
+            const response = await fetch(path, options);
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || `HTTP ${response.status}`);
             }
+            const contentType = response.headers.get("content-type") || "";
+            if (contentType.includes("application/json")) {
+                return response.json();
+            }
+            return response.text();
+        }
+
+        async function updateRoute() {
+            const dir = orderSelect.value;
+            const endpoint = dir === "input"
+                ? `${baseUrl}/cities?type=${selectedType}`
+                : `${baseUrl}/cities/order?type=${selectedType}&direction=${dir}`;
+            try {
+                const cities = await request(endpoint);
+                routeList.innerHTML = "";
+                cities.forEach((city, index) => {
+                    const li = document.createElement("li");
+                    li.textContent = `${index + 1}. ${city}`;
+                    routeList.appendChild(li);
+                });
+            } catch (err) {
+                setMessage(err.message, "error");
+            }
+        }
+
+        async function addCity() {
+            const city = cityInput.value.trim();
+            if (!city) {
+                setMessage("Bitte zuerst eine Stadt eintragen.", "error");
+                return;
+            }
+            try {
+                const result = await request(`${baseUrl}/cities?type=${selectedType}`, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({city})
+                });
+                setMessage(result.message, "success");
+                cityInput.value = "";
+                await updateRoute();
+            } catch (err) {
+                setMessage(err.message, "error");
+            }
+        }
+
+        async function removeCity() {
+            const city = removeInput.value.trim();
+            if (!city) {
+                setMessage("Welche Stadt soll gelöscht werden?", "error");
+                return;
+            }
+            try {
+                const params = new URLSearchParams({city, type: selectedType});
+                const result = await request(`${baseUrl}/cities?${params.toString()}`, {method: "DELETE"});
+                setMessage(result.message, result.message.includes("Gelöscht") ? "success" : "info");
+                removeInput.value = "";
+                await updateRoute();
+            } catch (err) {
+                setMessage(err.message, "error");
+            }
+        }
+
+        async function searchCity() {
+            const city = searchInput.value.trim();
+            if (!city) {
+                setMessage("Bitte einen Suchbegriff eingeben.", "error");
+                return;
+            }
+            try {
+                const params = new URLSearchParams({city, type: selectedType});
+                const result = await request(`${baseUrl}/cities/contains?${params.toString()}`);
+                setMessage(result.found ? `${city} ist vorhanden.` : `${city} wurde nicht gefunden.`, result.found ? "success" : "info");
+            } catch (err) {
+                setMessage(err.message, "error");
+            }
+        }
+
+        typeButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                typeButtons.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                selectedType = btn.dataset.type;
+                updateRoute();
+            });
         });
 
-        // 2. Schritt: Neue Stadt zum Array hinzufügen
-        btnCity.addEventListener('click', function() {
-            if (inputCity.value !== "") {
-                cities.push(inputCity.value);
-                inputCity.value = "";
+        document.getElementById("add-city").addEventListener("click", addCity);
+        document.getElementById("remove-city").addEventListener("click", removeCity);
+        document.getElementById("search-city").addEventListener("click", searchCity);
+        document.getElementById("refresh").addEventListener("click", updateRoute);
+        orderSelect.addEventListener("change", updateRoute);
 
-
-                stepCity.style.display = 'none';
-                stepRoute.style.display = 'block';
-                currentQuizIndex = 0;
-                feedback.innerHTML = `Tipp: Du musst ${cities.length} Stadt/Städte nennen.`;
-            }
-        });
-
-
-        btnRoute.addEventListener('click', function() {
-            const guess = inputRoute.value;
-
-            if (guess.toLowerCase() === cities[currentQuizIndex].toLowerCase()) {
-                currentQuizIndex++;
-                inputRoute.value = "";
-
-                if (currentQuizIndex === cities.length) {
-                    alert("Prima, alle Städte in der richtigen Reihenfolge!");
-
-                    stepRoute.style.display = 'none';
-                    stepCity.style.display = 'block';
-                } else {
-                    feedback.innerHTML = "Richtig! Nächste Stadt...";
-                }
-            } else {
-                alert(`${guess} ist falsch! Korrekt wäre ${cities[currentQuizIndex]}. Schade!`);
-                location.reload();
-            }
-        });
-    </script>
+        updateRoute();
+    });
+</script>
 </body>
 </html>

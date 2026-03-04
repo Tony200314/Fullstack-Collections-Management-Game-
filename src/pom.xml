@@ -46,7 +46,7 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-configuration-processor</artifactId>
-      <scope>annotationProcessor</scope>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -74,6 +74,21 @@
   </dependencies>
 
   <build>
+    <sourceDirectory>${project.basedir}/Backend</sourceDirectory>
+    <resources>
+      <resource>
+        <directory>${project.basedir}/resources</directory>
+      </resource>
+      <resource>
+        <directory>${project.basedir}/frontend</directory>
+        <targetPath>static</targetPath>
+        <includes>
+          <include>**/*.html</include>
+          <include>**/*.css</include>
+          <include>**/*.js</include>
+        </includes>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.springframework.boot</groupId>
