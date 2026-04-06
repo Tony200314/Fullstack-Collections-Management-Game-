@@ -1,9 +1,6 @@
 package Backend;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 @RestController
@@ -11,60 +8,54 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class connect {
 
-    private final your_Collection<String> list  = new yourList<>();
-    private final your_Collection<String> set   = new yourSet<>();
-    private final your_Collection<String> queue = new yourQueue<>();
+    private final CollectionService collectionService;
 
-    private your_Collection<String> pick(String type) {
-        if (type == null) return list; // default
-        return switch (type.toLowerCase()) {
-            case "set" -> set;
-            case "queue" -> queue;
-            default -> list;
-        };
+    public connect(CollectionService collectionService) {
+        this.collectionService = collectionService;
     }
 
-    @GetMapping("/add")
-    public String addCity(@RequestParam String city,
-                          @RequestParam(required = false, defaultValue = "list") String type) {
-        if (city == null || city.isBlank()) {
-            return "Bitte eine gültige Stadt angeben (z.B. /getConnection/add?city=Berlin&type=list)";
-        }
-        your_Collection<String> target = pick(type);
-        target.addElement(city);
-        return "Hinzugefügt: " + city + " in " + type;
+    @GetMapping
+    public String getCity(@RequestParam(defaultValue = "list") String rawType,
+                          @RequestParam String city) {
+        return collectionService.getCity(rawType, city);
     }
 
-
-    @GetMapping("/all")
-    public List<String> all(@RequestParam(required = false, defaultValue = "list") String type) {
-        your_Collection<String> target = pick(type);
-        List<String> out = new ArrayList<>();
-        for (String s : target) out.add(s);
-        return out; // JSON-Array
+    @GetMapping("/types")
+    public List<String> getType(){
+        return collectionService.availableTypes() ; 
     }
 
-    @GetMapping("/order")
-    public List<String> order(@RequestParam(required = false, defaultValue = "list") String type,
-                              @RequestParam(required = false, defaultValue = "input") String dir) {
-        your_Collection<String> target = pick(type);
+    @PostMapping("/newCity")
+    public String newCity(@RequestParam(defaultValue = "list") String rawType,
+                          @RequestParam String city) {
+        return collectionService.addCity(rawType, city);
+    }
 
-        // 1) In List kopieren
-        List<String> view = new ArrayList<>();
-        for (String s : target) view.add(s);
+    @GetMapping("/route")
+    public List<String> getRoute(@RequestParam(defaultValue = "list") String rawType) {
+        return collectionService.route(rawType);
+    }
 
-        // 2) Optional sortieren
-        switch (dir == null ? "input" : dir.toLowerCase()) {
-            case "asc"  -> view.sort(Comparator.naturalOrder());
-            case "desc" -> view.sort(Comparator.reverseOrder());
-            default -> { /* keine Sortierung */ }
-        }
+    @GetMapping("/route/ordered")
+    public List<String> getOrderedRoute(@RequestParam(defaultValue = "list") String rawType,
+                                        @RequestParam(defaultValue = "input") String order) {
+        return collectionService.orderedRoute(rawType, order);
+    }
 
-        // 3) Nummerieren
-        List<String> numbered = new ArrayList<>(view.size());
-        for (int i = 0; i < view.size(); i++) {
-            numbered.add((i + 1) + ". " + view.get(i));
-        }
-        return numbered;
+    @DeleteMapping("/city")
+    public boolean removeCity(@RequestParam(defaultValue = "list") String rawType,
+                              @RequestParam String city) {
+        return collectionService.remove(rawType, city);
+    }
+
+    @GetMapping("/contains")
+    public boolean containsCity(@RequestParam(defaultValue = "list") String rawType,
+                                @RequestParam String city) {
+        return collectionService.contains(rawType, city);
+    }
+
+    @GetMapping("/size")
+    public int getSize(@RequestParam(defaultValue = "list") String rawType) {
+        return collectionService.size(rawType);
     }
 }

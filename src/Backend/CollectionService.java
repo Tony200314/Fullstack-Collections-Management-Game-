@@ -34,6 +34,14 @@ public class CollectionService {
         return collections.getOrDefault(rawType.toLowerCase(Locale.ROOT), collections.get("list"));
     }
 
+    public String getCity(String rawType, String city) {
+        your_Collection<String> collection = resolve(rawType);
+        if (collection.containsElement(city)) {
+            return "Gefunden: " + city + " (" + typeLabel(rawType) + ")";
+        }
+        return "Keine Stadt gefunden: " + city + " (" + typeLabel(rawType) + ")";
+    }
+
     public String addCity(String rawType, String city) {
         your_Collection<String> collection = resolve(rawType);
         collection.addElement(city);
