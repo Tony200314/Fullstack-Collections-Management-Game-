@@ -69,15 +69,7 @@ src/
 
 Der Server läuft auf `http://localhost:8080`
 
-### Frontend öffnen
-Öffne einfach die HTML-Dateien im Browser oder nutze einen lokalen Web-Server:
-```bash
-# Python
-python -m http.server 8000
 
-# Node.js
-npx http-server
-```
 
 ## 📝 Beispiele
 
@@ -103,6 +95,9 @@ Die Anwendung ermöglicht es, verschiedene Datenstrukturen praktisch zu verstehe
 - **Set**: Einzigartige Elemente ohne Sortierung
 - **Queue**: FIFO-Prinzip (First In, First Out)
 - **Stack**: LIFO-Prinzip (Last In, First Out)
+
+## Hinweis 
+- Das Verbinden zwischen Backend und Frontend geht noch nicht 
 
 ## 📋 Anforderungen
 
